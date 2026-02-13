@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>MAP v5.6 — Integers Only</title>
+    <style>
+        body { background: #1a1a1a; color: white; font-family: sans-serif; text-align: center; margin: 0; padding: 20px; }
+        .wrapper { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; }
+        .card { background: #262626; border: 1px solid #444; border-radius: 12px; padding: 15px; width: 360px; }
+        .map-card { border: 2px solid #ffcc00; }
+        canvas { background: white; border-radius: 8px; width: 320px; height: 320px; margin-top: 15px; }
+        input { width: 90px; background: #333; color: #00ff00; border: 1px solid #666; padding: 8px; text-align: center; font-size: 18px; font-weight: bold; border-radius: 5px; }
+        .res-box { background: #000; color: #ffcc00; padding: 15px; border-radius: 8px; margin-top: 15px; font-family: monospace; font-size: 16px; line-height: 1.5; text-align: left; }
+        label { display: block; margin-bottom: 5px; color: #aaa; font-size: 14px; margin-top: 10px; }
+        .input-group { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+        .input-group label { margin: 0; text-align: left; width: 60%; }
+        h3 { margin-top: 0; }
+
+        /* Стиль кнопки */
+        .calc-btn {
+            display: block; width: 100%;
+            background: #ffcc00; color: #000;
+            border: none; padding: 15px;
+            font-size: 20px; font-weight: bold;
+            text-transform: uppercase; border-radius: 8px;
+            cursor: pointer; margin-top: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            transition: transform 0.1s, background 0.1s;
+        }
+        .calc-btn:active { background: #e6b800; transform: translateY(2px); }
+        .calc-btn:hover { background: #ffd633; }
+    </style>
+</head>
+<body>
+
+    <h1 style="color: #ffcc00;">Артилерійський Калькулятор</h1>
+
+    <div class="wrapper">
+        <div class="card">
+            <h3>Г-1 (ПАНОРАМА)</h3>
+            <label>Дирекційний ОН (напр. 60-00)</label>
+            <input type="text" id="inON" value="60-00">
+            <br>
+            <label>Кутомір на ОГ (напр. 24-15)</label>
+            <input type="text" id="inK" value="24-15">
+            <canvas id="canvDial"></canvas>
+        </div>
+
+        <div class="card map-card">
+            <h3>МАПА ТА РОЗРАХУНОК</h3>
+            
+            <div class="input-group">
+                <label>Відстань до ОГ (м):</label>
+                <input type="number" id="inD" value="137">
+            </div>
+
+            <div class="input-group">
+                <label>Дельта X (тис.):</label>
+                <input type="number" id="inDX" value="0.5" step="0.01">
+            </div>
+
+            <div class="input-group">
+                <label>Дальність топ. (м):</label>
+                <input type="number" id="inDtop" value="2000">
+            </div>
+
+            <button onclick="calc()" class="calc-btn">РОЗРАХУВАТИ</button>
+
+            <canvas id="canvMap"></canvas>
+            <div id="result" class="res-box">Натисніть кнопку...</div>
+        </div>
+    </div>
+
+<script>
+    // --- Допоміжні функції ---
+    function parse6000(s) {
+        try {
+            var str = (s || '').toString().trim();
+            var b = str.split('-');
+            if (b.length < 2) return parseFloat(str) || 0;
+            return parseFloat(b[0]) + parseFloat(b[1]) / 100;
+        } catch(e) { return 0; }
+    }
+
+    function degFrom6000(t) { return t * 6; }
+    function radFromDegTopZero(deg) { return (deg - 90) * Math.PI / 180; }
+
+    // --- ОСНОВНА ФУНКЦІЯ РОЗРАХУНКУ ---
+    function calc() {
+        try {
+            // 1. Отримання даних
+            var onStr = document.getElementById('inON').value;
+            var kStr = document.getElementById('inK').value;
+            var d = parseFloat(document.getElementById('inD').value) || 0;
+            var dxVal = parseFloat(document.getElementById('inDX').value) || 0;
+            var dTopVal = parseFloat(document.getElementById('inDtop').value) || 0;
+
+            var on = parse6000(onStr);
+            var k = parse6000(kStr);
+
+            // 2. Математика координат
+            var aON = (on * 6 - 90) * Math.PI / 180;
+            var aK = aON + (30 - k) * 6 * Math.PI / 180;
+            var a_G1_OG = (on * 6 + (30 - k) * 6);
+            var a_OG_G1 = (a_G1_OG + 180) % 360;
+            var rad = (a_OG_G1 - 90) * Math.PI / 180;
+            var dx = d * Math.cos(rad);
+            var dy = d * Math.sin(rad);
+            var aAB = aON + radFromDegTopZero(degFrom6000(30 - k) + 90);
+
+            // 3. Малювання Г-1 (Dial)
+            var cd = document.getElementById('canvDial');
+            var ctxd = cd.getContext('2d');
+            cd.width = 400; cd.height = 400;
+            ctxd.clearRect(0, 0, 400, 400);
+
+            // Зовнішня шкала
+            for (var i = 0; i < 60; i++) {
+                var a = radFromDegTopZero(i * 6);
+                ctxd.beginPath();
+                ctxd.moveTo(200 + 165 * Math.cos(a), 200 + 165 * Math.sin(a));
+                ctxd.lineTo(200 + (i % 5 === 0 ? 145 : 155) * Math.cos(a), 200 + (i % 5 === 0 ? 145 : 155) * Math.sin(a));
+                ctxd.strokeStyle = '#333'; ctxd.stroke();
+                if (i % 5 === 0) {
+                    ctxd.fillStyle = '#000'; ctxd.font = 'bold 14px Arial';
+                    var num = i < 10 ? '0' + i : i;
+                    ctxd.fillText(num, 200 + 180 * Math.cos(a) - 10, 200 + 180 * Math.sin(a) + 5);
+                }
+            }
+            // Внутрішня шкала
+            for (var i = 0; i < 60; i++) {
+                var a = radFromDegTopZero(degFrom6000(on) + (30 - i) * 6);
+                ctxd.beginPath();
+                ctxd.moveTo(200 + 125 * Math.cos(a), 200 + 125 * Math.sin(a));
+                ctxd.lineTo(200 + (i % 5 === 0 ? 105 : 115) * Math.cos(a), 200 + (i % 5 === 0 ? 105 : 115) * Math.sin(a));
+                ctxd.strokeStyle = 'blue'; ctxd.stroke();
+                if (i % 10 === 0) {
+                    ctxd.fillStyle = 'blue'; ctxd.font = '12px Arial';
+                    var num = i < 10 ? '0' + i : i;
+                    ctxd.fillText(num, 200 + 90 * Math.cos(a) - 10, 200 + 90 * Math.sin(a) + 5);
+                }
+            }
+            // Стрілки
+            ctxd.lineWidth = 5; ctxd.strokeStyle = 'red'; ctxd.beginPath();
+            ctxd.moveTo(200, 200); ctxd.lineTo(200 + 140 * Math.cos(aON), 200 + 140 * Math.sin(aON)); ctxd.stroke();
+            
+            ctxd.lineWidth = 3; ctxd.strokeStyle = 'blue'; ctxd.setLineDash([10, 5]); ctxd.beginPath();
+            ctxd.moveTo(200, 200); ctxd.lineTo(200 + 165 * Math.cos(aAB), 200 + 165 * Math.sin(aAB)); ctxd.stroke(); ctxd.setLineDash([]);
+
+            // 4. Малювання Мапи
+            var cm = document.getElementById('canvMap');
+            var ctxm = cm.getContext('2d');
+            cm.width = 400; cm.height = 400;
+            ctxm.clearRect(0, 0, 400, 400);
+
+            // Сітка
+            ctxm.strokeStyle = '#ddd'; ctxm.lineWidth = 1; ctxm.beginPath();
+            for (var i = 0; i <= 400; i += 50) { ctxm.moveTo(i, 0); ctxm.lineTo(i, 400); ctxm.moveTo(0, i); ctxm.lineTo(400, i); }
+            ctxm.stroke();
+
+            var Bx = 200, By = 200;
+            var scale = 0.7;
+            var Ax = Bx + dx * scale;
+            var Ay = By + dy * scale;
+
+            // Лінія
+            ctxm.lineWidth = 2; ctxm.strokeStyle = 'blue'; ctxm.setLineDash([10, 5]);
+            ctxm.beginPath(); ctxm.moveTo(Ax, Ay); ctxm.lineTo(Bx, By); ctxm.stroke(); ctxm.setLineDash([]);
+
+            // Точки
+            var r = 8;
+            ctxm.fillStyle = 'red'; ctxm.beginPath(); ctxm.arc(Bx, By, r, 0, 2 * Math.PI); ctxm.fill(); ctxm.fillText('ОГ', Bx + 14, By + 4);
+            ctxm.fillStyle = 'blue'; ctxm.beginPath(); ctxm.arc(Ax, Ay, r, 0, 2 * Math.PI); ctxm.fill(); ctxm.fillText('Г1', Ax + 14, Ay + 4);
+
+            // 5. Розрахунок результатів
+            var diff = (a_OG_G1 - on * 6) * Math.PI / 180;
+            var ustup = d * Math.cos(diff);
+            var inter = -1 * d * Math.sin(diff);
+
+            var dPric = (dxVal !== 0) ? ustup / dxVal : 0;
+            var dKut = (dTopVal !== 0) ? (inter * 955) / dTopVal : 0;
+
+            // ОКРУГЛЕННЯ ДО ЦІЛИХ (Math.round)
+            var ustupR = Math.round(ustup);
+            var interR = Math.round(inter);
+            var dPricR = Math.round(dPric);
+            var dKutR = Math.round(dKut);
+
+            // Вивід
+            document.getElementById('result').innerHTML =
+                "<b>УСТУП:</b> " + ustupR + " м<br>" +
+                "<b>ІНТЕРВАЛ:</b> " + interR + " м<br>" +
+                "<hr style='border-color: #333'>" +
+                "<b>Δ Прицілу:</b> <span style='color: #00ff00'>" + dPricR + "</span><br>" +
+                "<b>Δ Кутоміру:</b> <span style='color: #00ff00'>" + dKutR + "</span> (т.д.)";
+
+        } catch (err) {
+            alert("ПОМИЛКА У КОДІ: " + err.message);
+        }
+    }
+
+    // Запускаємо один раз при старті, щоб намалювати сітки
+    window.onload = function() {
+        calc();
+    };
+</script>
+</body>
+</html>
