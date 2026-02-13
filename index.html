@@ -2,223 +2,188 @@
 <html lang="uk">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>MAP v5.7 — Signs & Logic</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ArtCalc - ПУО 🫡</title>
     <style>
-        body { background: #1a1a1a; color: white; font-family: sans-serif; text-align: center; margin: 0; padding: 20px; }
-        .wrapper { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; }
-        .card { background: #262626; border: 1px solid #444; border-radius: 12px; padding: 15px; width: 360px; }
-        .map-card { border: 2px solid #ffcc00; }
-        canvas { background: white; border-radius: 8px; width: 320px; height: 320px; margin-top: 15px; }
-        input { width: 90px; background: #333; color: #00ff00; border: 1px solid #666; padding: 8px; text-align: center; font-size: 18px; font-weight: bold; border-radius: 5px; }
-        .res-box { background: #000; color: #ffcc00; padding: 15px; border-radius: 8px; margin-top: 15px; font-family: monospace; font-size: 16px; line-height: 1.5; text-align: left; }
-        label { display: block; margin-bottom: 5px; color: #aaa; font-size: 14px; margin-top: 10px; }
-        .input-group { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
-        .input-group label { margin: 0; text-align: left; width: 60%; }
-        h3 { margin-top: 0; }
-
-        /* Стиль кнопки */
-        .calc-btn {
-            display: block; width: 100%;
-            background: #ffcc00; color: #000;
-            border: none; padding: 15px;
-            font-size: 20px; font-weight: bold;
-            text-transform: uppercase; border-radius: 8px;
-            cursor: pointer; margin-top: 15px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-            transition: transform 0.1s, background 0.1s;
-        }
-        .calc-btn:active { background: #e6b800; transform: translateY(2px); }
-        .calc-btn:hover { background: #ffd633; }
+        body { font-family: sans-serif; background: #121212; color: #e0e0e0; padding: 10px; }
+        .block { background: #1e1e1e; border: 1px solid #333; padding: 15px; margin-bottom: 15px; border-radius: 10px; }
+        h3 { color: #4CAF50; border-bottom: 2px solid #4CAF50; padding-bottom: 5px; margin-top: 0; text-transform: uppercase; font-size: 0.9em; }
+        label { display: block; font-size: 0.8em; color: #bbb; margin-bottom: 3px; }
+        .hint { font-size: 0.75em; color: #ff9800; margin-bottom: 8px; font-style: italic; }
+        input { width: 100%; padding: 12px; background: #2a2a2a; border: 1px solid #444; color: white; border-radius: 6px; box-sizing: border-box; margin-bottom: 10px; }
+        button { width: 100%; padding: 14px; background: #2e7d32; border: none; color: white; font-weight: bold; border-radius: 6px; cursor: pointer; text-transform: uppercase; width: 100%; }
+        .result { margin-top: 12px; padding: 12px; background: #263238; border-left: 5px solid #4CAF50; font-family: monospace; white-space: pre-wrap; font-size: 1.1em; }
+        .flex { display: flex; gap: 8px; }
+        .flex div { flex: 1; }
     </style>
 </head>
 <body>
 
-    <h1 style="color: #ffcc00;">Артилерійський Калькулятор</h1>
+    <h2 style="text-align: center; color: #4CAF50;">ArtCalc: ПУО 🫡</h2>
 
-    <div class="wrapper">
-        <div class="card">
-            <h3>Г-1 (ПАНОРАМА)</h3>
-            <label>Дирекційний ОН (напр. 60-00)</label>
-            <input type="text" id="inON" value="60-00">
-            <br>
-            <label>Кутомір на ОГ (напр. 24-15)</label>
-            <input type="text" id="inK" value="24-15">
-            <canvas id="canvDial"></canvas>
+    <div class="block">
+        <h3>1. ПГЗ: Координати та висота</h3>
+        <div class="flex">
+            <input type="text" id="e_kt" placeholder="E кт">
+            <input type="text" id="n_kt" placeholder="N кт">
+            <input type="text" id="h_kt" placeholder="h кт">
         </div>
-
-        <div class="card map-card">
-            <h3>МАПА ТА РОЗРАХУНОК</h3>
-            
-            <div class="input-group">
-                <label>Відстань до ОГ (м):</label>
-                <input type="number" id="inD" value="137">
-            </div>
-
-            <div class="input-group">
-                <label>Дельта X (тис.):</label>
-                <input type="number" id="inDX" value="0.5" step="0.01">
-            </div>
-
-            <div class="input-group">
-                <label>Дальність топ. (м):</label>
-                <input type="number" id="inDtop" value="2000">
-            </div>
-
-            <button onclick="calc()" class="calc-btn">РОЗРАХУВАТИ</button>
-
-            <canvas id="canvMap"></canvas>
-            <div id="result" class="res-box">Натисніть кнопку...</div>
+        <div class="flex">
+            <input type="text" id="on_val" placeholder="ОН">
+            <input type="text" id="d_kt" placeholder="Кутомір d">
         </div>
+        <div class="flex">
+            <input type="text" id="d_pgz" placeholder="Дальність D">
+            <input type="text" id="mc_val" placeholder="Mц (напр. 0,13)">
+        </div>
+        <button onclick="calculatePGZ()">Розрахувати ОГ</button>
+        <div id="resPGZ" class="result">...</div>
     </div>
 
-<script>
-    // --- Допоміжні функції ---
-    function parse6000(s) {
-        try {
-            var str = (s || '').toString().trim();
-            var b = str.split('-');
-            if (b.length < 2) return parseFloat(str) || 0;
-            return parseFloat(b[0]) + parseFloat(b[1]) / 100;
-        } catch(e) { return 0; }
-    }
+    <div class="block">
+        <h3>2. Орієнтування 1-ї гармати</h3>
+        <input type="text" id="d_0_1" placeholder="Кутомір з основної на 1-шу">
+        <input type="text" id="beta_1st" placeholder="β (рейка)">
+        <button onclick="calculate1st()">Розрахувати I та У</button>
+        <div id="res1st" class="result">...</div>
+    </div>
 
-    function degFrom6000(t) { return t * 6; }
-    function radFromDegTopZero(deg) { return (deg - 90) * Math.PI / 180; }
+    <div class="block">
+        <h3>3. Глибина укриття</h3>
+        <div class="flex">
+            <input type="text" id="dt_ukr" placeholder="Дт (ціль)">
+            <input type="text" id="d_ukr" placeholder="d (гребінь)">
+        </div>
+        <div class="flex">
+            <input type="text" id="h_sp" placeholder="h сп">
+            <input type="text" id="h_gr_ukr" placeholder="h гр">
+            <input type="text" id="h_vp" placeholder="h вп">
+        </div>
+        <button onclick="calculateUkr()">Розрахувати Г укр</button>
+        <div id="resUkr" class="result">...</div>
+    </div>
 
-    // --- ОСНОВНА ФУНКЦІЯ ---
-    function calc() {
-        try {
-            // 1. Отримання даних
-            var onStr = document.getElementById('inON').value;
-            var kStr = document.getElementById('inK').value;
-            var d = parseFloat(document.getElementById('inD').value) || 0;
-            var dxVal = parseFloat(document.getElementById('inDX').value) || 0;
-            var dTopVal = parseFloat(document.getElementById('inDtop').value) || 0;
+    <div class="block">
+        <h3>4. Найменший приціл</h3>
+        <p class="hint">⚠️ кут альфа беремо з ТС або «Кропиви»</p>
+        <input type="text" id="hgr_min" placeholder="hгр (висота гребня)">
+        <input type="text" id="d_min" placeholder="D (дальність до гребня)">
+        <input type="text" id="alpha_min" placeholder="кут альфа">
+        <button onclick="calculateMinPr()">Розрахувати Пр мін</button>
+        <div id="resMin" class="result">...</div>
+    </div>
 
-            var on = parse6000(onStr);
-            var k = parse6000(kStr);
+    <div class="block">
+        <h3>5. ΔV0 сум невідомої партії</h3>
+        <label>ΔV0 сум ВІДОМОЇ партії:</label>
+        <input type="text" id="dv0_known" placeholder="Напр. -1.2">
+        <div class="flex">
+            <div>
+                <label>Дт ВІДОМОЇ партії:</label>
+                <input type="text" id="dt_known" placeholder="Дт від.">
+            </div>
+            <div>
+                <label>Дт НЕВІДОМОЇ партії:</label>
+                <input type="text" id="dt_unknown" placeholder="Дт нев.">
+            </div>
+        </div>
+        <label>ΔX Vo (з ТС):</label>
+        <input type="text" id="dx_vo" placeholder="Дельта XVo">
+        <button onclick="calculateDV0()">Розрахувати ΔV0 сум</button>
+        <div id="resDV0" class="result">...</div>
+    </div>
 
-            // 2. Геометрія (для малювання)
-            var aON = (on * 6 - 90) * Math.PI / 180;
-            var aK = aON + (30 - k) * 6 * Math.PI / 180;
-            var a_G1_OG = (on * 6 + (30 - k) * 6);
-            var a_OG_G1 = (a_G1_OG + 180) % 360;
-            var rad = (a_OG_G1 - 90) * Math.PI / 180;
-            var dx = d * Math.cos(rad);
-            var dy = d * Math.sin(rad);
-            var aAB = aON + radFromDegTopZero(degFrom6000(30 - k) + 90);
+    <div class="block">
+        <h3>6. Віяло та приціл 1-ї гармати</h3>
+        <p class="hint">⚠️ I та У беруться автоматично з Блоку 2</p>
+        <label>Доворот основної (напр. -1,23):</label>
+        <input type="text" id="on_main" placeholder="напр. -1,20">
+        <label>Приціл основної:</label>
+        <input type="text" id="pr_main" placeholder="Приціл">
+        <label>Дт (дальність до цілі):</label>
+        <input type="text" id="dt_fan" placeholder="Дт">
+        <label>ΔX (ціна поділки прицілу):</label>
+        <input type="text" id="dx_val" placeholder="ΔX">
+        <button onclick="calculateFan()">Розрахувати 1-шу</button>
+        <div id="resFan" class="result">...</div>
+    </div>
 
-            // 3. Малювання (Г-1 та Мапа)
-            drawDial(on, aON, aAB);
-            drawMap(dx, dy, aON);
+    <script>
+        let global_I = 0;
+        let global_U = 0;
 
-            // 4. Розрахунок Уступу та Інтервалу (геометричний)
-            var diff = (a_OG_G1 - on * 6) * Math.PI / 180;
-            var ustup = d * Math.cos(diff);
-            var inter = -1 * d * Math.sin(diff);
+        function parseArt(val) { return parseFloat(val.toString().replace(',', '.')); }
 
-            // 5. Розрахунок Дельти Прицілу (З урахуванням знаків Кутоміра)
-            // Спочатку беремо абсолютне значення (модуль)
-            var rawPric = (dxVal !== 0) ? Math.abs(ustup / dxVal) : 0;
-            var dPricFinal = 0;
+        function formatResultDovorot(val) {
+            let sign = val >= 0 ? "+" : "-";
+            let absVal = Math.round(Math.abs(val) * 100) / 100;
+            let cel = Math.floor(absVal);
+            let ost = Math.round((absVal - cel) * 100);
+            if (ost >= 100) { cel += 1; ost -= 100; }
+            return `${sign}${cel.toString().padStart(2, '0')}-${ost.toString().padStart(2, '0')}`;
+        }
 
-            // Логіка знаків від користувача:
-            // Якщо Кутомір 30..45 -> Знак "+" (Тил Ліво)
-            // Якщо Кутомір 45..60 -> Знак "-" (Фронт Ліво)
-            // Доповнюємо логіку для повноти:
-            // 15..30 (Тил Право) -> "+"
-            // 0..15 (Фронт Право) -> "-"
+        function calculatePGZ() {
+            let e = parseArt(document.getElementById('e_kt').value), n = parseArt(document.getElementById('n_kt').value), h = parseArt(document.getElementById('h_kt').value);
+            let on = parseArt(document.getElementById('on_val').value), d_kt = parseArt(document.getElementById('d_kt').value);
+            let dist = parseArt(document.getElementById('d_pgz').value), mc_raw = document.getElementById('mc_val').value.replace(',', '.');
+            let alpha = on - d_kt; if (on < d_kt) alpha += 60;
+            let mc = parseFloat(mc_raw); if (Math.abs(mc) < 1 && mc !== 0) mc *= 100;
+            let rad = (alpha * 6) * (Math.PI / 180);
+            document.getElementById('resPGZ').innerHTML = `E: ${Math.round(e + dist * Math.sin(rad))}\nN: ${Math.round(n + dist * Math.cos(rad))}\nh: ${Math.round(h + (mc * dist) / 955)}`;
+        }
+
+        function calculate1st() {
+            let dk = parseArt(document.getElementById('d_0_1').value), beta = parseArt(document.getElementById('beta_1st').value);
+            let alpha = dk + 30; if (alpha >= 60) alpha -= 60;
+            let dist = (2 * 955) / (beta * 100);
+            let rad = (alpha * 6) * (Math.PI / 180);
+            global_I = dist * Math.sin(rad);
+            global_U = -(dist * Math.cos(rad));
+            document.getElementById('res1st').innerHTML = `I: ${global_I.toFixed(2)}м\nУ: ${global_U.toFixed(2)}м\n(Дані збережено)`;
+        }
+
+        function calculateUkr() {
+            let dt = parseArt(document.getElementById('dt_ukr').value), d = parseArt(document.getElementById('d_ukr').value);
+            let hs = parseArt(document.getElementById('h_sp').value), hg = parseArt(document.getElementById('h_gr_ukr').value), hv = parseArt(document.getElementById('h_vp').value);
+            let D_val = dt - d;
+            let res = (hg - hv) - (((hs - hv) - (hg - hv)) * d / D_val);
+            document.getElementById('resUkr').innerHTML = `Г укр: ${res.toFixed(2)} м`;
+        }
+
+        function calculateMinPr() {
+            let hg = parseArt(document.getElementById('hgr_min').value), d = parseArt(document.getElementById('d_min').value), a = parseArt(document.getElementById('alpha_min').value);
+            let bn = (hg * 955) / d;
+            document.getElementById('resMin').innerHTML = `Бета n: ${bn.toFixed(2)}\nПр мін: ${(bn + a).toFixed(2)}`;
+        }
+
+        function calculateDV0() {
+            let dv = parseArt(document.getElementById('dv0_known').value), dtk = parseArt(document.getElementById('dt_known').value), dtu = parseArt(document.getElementById('dt_unknown').value), dx = parseArt(document.getElementById('dx_vo').value);
+            let total = dv + ((dtu - dtk) / dx);
+            document.getElementById('resDV0').innerHTML = `ΔV0 СУМ (нев): ${total.toFixed(2)} %`;
+        }
+
+        function calculateFan() {
+            let on_m = parseArt(document.getElementById('on_main').value);
+            let pr_m = parseArt(document.getElementById('pr_main').value);
+            let dt = parseArt(document.getElementById('dt_fan').value);
+            let dx = parseArt(document.getElementById('dx_val').value);
+
+            if (global_I === 0 && global_U === 0) { alert("Розрахуйте Блок 2!"); return; }
+
+            // Віяло в поділках
+            let fan_raw = (global_I * 955) / dt / 100;
+            // Ділимо віяло на 100 для додавання до формату числа з комою
+            let fan_for_calc = fan_raw / 100;
             
-            // Отже: 15 <= K < 45 це ПЛЮС, інакше МІНУС.
-            if (k >= 15 && k < 45) {
-                dPricFinal = rawPric; // Плюс
-            } else {
-                dPricFinal = -rawPric; // Мінус
-            }
+            let on1 = on_m + fan_for_calc;
+            let pr1 = pr_m + (global_U / dx);
 
-            // Розрахунок Дельти Кутоміру
-            var dKut = (dTopVal !== 0) ? (inter * 955) / dTopVal : 0;
-
-            // 6. Округлення
-            var ustupR = Math.round(ustup);
-            var interR = Math.round(inter);
-            var dPricR = Math.round(dPricFinal);
-            var dKutR = Math.round(dKut);
-
-            // Форматування знаку для Дельти Прицілу (щоб було видно +)
-            var dPricStr = (dPricR > 0) ? "+" + dPricR : dPricR.toString();
-            var dKutStr = (dKutR > 0) ? "+" + dKutR : dKutR.toString();
-
-            // Вивід
-            document.getElementById('result').innerHTML =
-                "<b>УСТУП:</b> " + ustupR + " м<br>" +
-                "<b>ІНТЕРВАЛ:</b> " + interR + " м<br>" +
-                "<hr style='border-color: #333'>" +
-                "<b>Δ Прицілу:</b> <span style='color: #00ff00; font-size: 1.2em'>" + dPricStr + "</span><br>" +
-                "<b>Δ Кутоміру:</b> <span style='color: #00ff00; font-size: 1.2em'>" + dKutStr + "</span> (т.д.)";
-
-        } catch (err) {
-            alert("ПОМИЛКА: " + err.message);
+            document.getElementById('resFan').innerHTML = 
+                `Віяло: ${fan_raw.toFixed(2)}  под.\n` +
+                `ОН 1-ї: ${formatResultDovorot(on1)}\n` +
+                `Приціл 1-ї: ${pr1.toFixed(1)}`;
         }
-    }
-
-    function drawDial(on, aON, aAB) {
-        var cd = document.getElementById('canvDial');
-        var ctxd = cd.getContext('2d');
-        cd.width = 400; cd.height = 400;
-        ctxd.clearRect(0, 0, 400, 400);
-
-        for (var i = 0; i < 60; i++) {
-            var a = radFromDegTopZero(i * 6);
-            ctxd.beginPath(); ctxd.moveTo(200 + 165 * Math.cos(a), 200 + 165 * Math.sin(a));
-            ctxd.lineTo(200 + (i % 5 === 0 ? 145 : 155) * Math.cos(a), 200 + (i % 5 === 0 ? 145 : 155) * Math.sin(a));
-            ctxd.strokeStyle = '#333'; ctxd.stroke();
-            if (i % 5 === 0) {
-                ctxd.fillStyle = '#000'; ctxd.font = 'bold 14px Arial';
-                ctxd.fillText(i < 10 ? '0'+i : i, 200 + 180 * Math.cos(a) - 10, 200 + 180 * Math.sin(a) + 5);
-            }
-        }
-        for (var i = 0; i < 60; i++) {
-            var a = radFromDegTopZero(degFrom6000(on) + (30 - i) * 6);
-            ctxd.beginPath(); ctxd.moveTo(200 + 125 * Math.cos(a), 200 + 125 * Math.sin(a));
-            ctxd.lineTo(200 + (i % 5 === 0 ? 105 : 115) * Math.cos(a), 200 + (i % 5 === 0 ? 105 : 115) * Math.sin(a));
-            ctxd.strokeStyle = 'blue'; ctxd.stroke();
-            if (i % 10 === 0) {
-                ctxd.fillStyle = 'blue'; ctxd.font = '12px Arial';
-                ctxd.fillText(i < 10 ? '0'+i : i, 200 + 90 * Math.cos(a) - 10, 200 + 90 * Math.sin(a) + 5);
-            }
-        }
-        ctxd.lineWidth = 5; ctxd.strokeStyle = 'red'; ctxd.beginPath();
-        ctxd.moveTo(200, 200); ctxd.lineTo(200 + 140 * Math.cos(aON), 200 + 140 * Math.sin(aON)); ctxd.stroke();
-        ctxd.lineWidth = 3; ctxd.strokeStyle = 'blue'; ctxd.setLineDash([10, 5]); ctxd.beginPath();
-        ctxd.moveTo(200, 200); ctxd.lineTo(200 + 165 * Math.cos(aAB), 200 + 165 * Math.sin(aAB)); ctxd.stroke(); ctxd.setLineDash([]);
-    }
-
-    function drawMap(dx, dy, aON) {
-        var cm = document.getElementById('canvMap');
-        var ctxm = cm.getContext('2d');
-        cm.width = 400; cm.height = 400;
-        ctxm.clearRect(0, 0, 400, 400);
-
-        ctxm.strokeStyle = '#ddd'; ctxm.lineWidth = 1; ctxm.beginPath();
-        for (var i = 0; i <= 400; i += 50) { ctxm.moveTo(i, 0); ctxm.lineTo(i, 400); ctxm.moveTo(0, i); ctxm.lineTo(400, i); }
-        ctxm.stroke();
-
-        var Bx = 200, By = 200;
-        var scale = 0.7;
-        var Ax = Bx + dx * scale;
-        var Ay = By + dy * scale;
-
-        ctxm.lineWidth = 2; ctxm.strokeStyle = 'blue'; ctxm.setLineDash([10, 5]);
-        ctxm.beginPath(); ctxm.moveTo(Ax, Ay); ctxm.lineTo(Bx, By); ctxm.stroke(); ctxm.setLineDash([]);
-
-        var r = 8;
-        ctxm.fillStyle = 'red'; ctxm.beginPath(); ctxm.arc(Bx, By, r, 0, 2 * Math.PI); ctxm.fill(); ctxm.fillText('ОГ', Bx + 14, By + 4);
-        ctxm.fillStyle = 'blue'; ctxm.beginPath(); ctxm.arc(Ax, Ay, r, 0, 2 * Math.PI); ctxm.fill(); ctxm.fillText('Г1', Ax + 14, Ay + 4);
-    }
-
-    window.onload = function() { calc(); };
-</script>
+    </script>
 </body>
 </html>
